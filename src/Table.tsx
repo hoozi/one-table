@@ -1,4 +1,5 @@
-import { defineComponent, PropType, ref, reactive, unref, computed, onMounted, onUpdated } from 'vue';
+import './index.less';
+import { defineComponent, PropType, ref, reactive, unref, computed, onMounted, onUpdated, nextTick } from 'vue';
 import { Table } from 'ant-design-vue';
 import { defaultTableProps } from 'ant-design-vue/lib/table/Table';
 import PropTypes from 'ant-design-vue/es/_util/vue-types';
@@ -9,6 +10,7 @@ import usePagination from './hooks/usePagation';
 import useDefaultState from './hooks/useDefaultState'
 import { mergePaginationProps } from './utils';
 import useBindAction from './hooks/useBindAction';
+import usePrefix from './hooks/usePrefix';
 
 type Key = ColumnProps['key']
 
@@ -31,6 +33,17 @@ const OneTable = defineComponent<OneTableProps>({
       getAction,
       ...rest
     } = props;
+
+    const tableBaseCls = usePrefix('table-container');
+
+    const tableWrapperCls = computed(() => ({
+      [`${tableBaseCls}`]: true,
+      [`${tableBaseCls}-small`]: props.size === 'small',
+      [`${tableBaseCls}-pagination`]: !!props.pagination,
+      [`${tableBaseCls}-full`]: !!props.full,
+      [`${tableBaseCls}-bordered`]: !!props.bordered
+    }))
+
     const fetchPagination = typeof props.pagination === 'object' ? props.pagination : { pageSize: 20, current: 1, total: 0, defaultPageSize: 20, defaultCurrent:1 }
     const { pageInfo, defaultPageInfo, setPageInfo } = usePagination(fetchPagination);
     const rootRef = ref<HTMLDivElement>();
@@ -71,6 +84,7 @@ const OneTable = defineComponent<OneTableProps>({
     const rowSelection: TableProps['rowSelection'] = computed(() => (
       {
         selectedRowKeys: unref(selectedRowKeys),
+        //fixed: true,
         ...props.rowSelection,
         onChange: (keys: Key[], rows: typeof dataSource) => {
           if (props.rowSelection && ('onChange' in props.rowSelection)) {
@@ -114,6 +128,7 @@ const OneTable = defineComponent<OneTableProps>({
         effects: [params, formSearch, sortRef, filterRef],
         debounceTime,
       },
+      rootRef
     );
 
     const bindedAction = useBindAction(
@@ -155,13 +170,15 @@ const OneTable = defineComponent<OneTableProps>({
     );
     
     // 分页相关
-    const pagination = mergePaginationProps(
+    const pagination = computed(() => mergePaginationProps(
       props.pagination,
+      unref(selectedRows) || [],
       Object.assign(pageInfo, {
         setPageInfo: ({ current, pageSize }: PageInfo) => {
 
           // pageSize的变化 可能会出现空白页
           // 所以要把current变为1
+  
           if(
             pageSize !== pageInfo.pageSize &&
             current !== 1
@@ -175,28 +192,31 @@ const OneTable = defineComponent<OneTableProps>({
           setPageInfo({ pageSize, current });
         }
       }),
-    );
+    ));
     const getTableProps = () => ({
       ...rest,
       columns,
       loading: action.loading.value,
       dataSource: action.dataSource.value,
-      pagination,
+      pagination: props.pagination === false ? false : pagination.value,
       rowSelection: props.rowSelection === null ? undefined : rowSelection.value,
       rowKey: getRowKey.value,
       class: tableClass,
-      style: tableStyle
+      style: tableStyle,
+      scroll: {
+        y: !!props.full,
+        x: props.scroll ? props.scroll.x : 100
+      }
     });
     onMounted(() => {
-      console.log(getAction)
       getAction?.(bindedAction);
     });
-    onUpdated(() => {
+    /* onUpdated(() => {
       getAction?.(bindedAction);
-    });
+    }); */
     return () => {
       return (
-        <div ref={rootRef}>
+        <div class={tableWrapperCls.value} ref={rootRef}>
           <Table {...getTableProps()} v-slots={slots || {}}/>
         </div>
       )
@@ -226,7 +246,8 @@ OneTable.props = {
   },
   search: PropTypes.oneOfType([Boolean, Object]).def(false),
   tableClass: PropTypes.string.def(''),
-  tableStyle: PropTypes.style.def({})
+  tableStyle: PropTypes.style.def({}),
+  full: PropTypes.bool.def(false)
 };
 
 export default OneTable;

@@ -1,4 +1,4 @@
-import type { VNodeChild, Ref, CSSProperties } from 'vue';
+import type { VNodeChild, Ref, CSSProperties, UnwrapRef } from 'vue';
 import type { ColumnProps, TableProps, SortOrder } from 'ant-design-vue/es/table/interface';
 
 export type RenderVNode = VNodeChild | Element | JSX.Element;
@@ -78,7 +78,7 @@ export type TableColumnProps = ColumnProps & {
 }
 
 export type ActionType = {
-  reload: (resetPageIndex?: boolean) => void;
+  reload?: (resetPageIndex?: boolean) => void;
   reloadAndRest?: () => void;
   reset?: () => void;
   clearSelected?: () => void;
@@ -101,7 +101,7 @@ export type OneTableProps = Omit<TableProps, 'columns'> & {
     sort: Record<string, SortOrder> | undefined,
     filter: Record<string, VNodeText[]> | undefined,
   ) : Promise<Partial<RequestData<any>>>;
-  getAction?(action:ActionType & { fullScreen?: () => void; }):void;
+  getAction?(action:UnwrapRef<ActionType & { fullScreen?: () => void; }>):void;
   defaultData?:any[];
   postData?: (data: any[]) => any[];
   manualRequest?: boolean;
@@ -109,6 +109,7 @@ export type OneTableProps = Omit<TableProps, 'columns'> & {
   search?: boolean;
   tableStyle?: CSSProperties;
   tableClass?: string;
+  full?:boolean;
 }
 
 export type WithFalse<T> = T | false;

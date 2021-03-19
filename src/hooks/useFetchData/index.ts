@@ -1,11 +1,13 @@
 import type { RequestData, UseFetchDataAction, UseFetchProps } from '../../typings';
-import { ref, watch, unref, onBeforeMount, onMounted } from 'vue';
+import { ref, Ref, watch, unref, onBeforeMount, onMounted, watchEffect } from 'vue';
 import useDebounce from '../useDebounce';
+import useFullFixed from '../useFullFixed';
 
 function useFetchData(
   asyncGetData: undefined | ((params?: { pageSize: number; current: number }) => Promise<RequestData<any>>),
   defaultData: any[] | undefined,
-  options: UseFetchProps 
+  options: UseFetchProps,
+  root: Ref<HTMLElement | undefined>
 ):UseFetchDataAction {
   const { 
     debounceTime = 20, 
@@ -73,6 +75,7 @@ function useFetchData(
       emit?.('dataLoad', data?.records, rest);
       const responseData = postData?.(data?.records) || data?.records;
       setData(responseData, data?.total || 0);
+      useFullFixed(root);
       return responseData;
     } catch(e) {
       emit?.('requestError');
@@ -82,19 +85,28 @@ function useFetchData(
       loadingRef.value = false;
       requesting.value = false;
     }
-
     return [];
   }
-
   const fetchDebounce = useDebounce(async () => {
     await fetchData();
   }, debounceTime);
 
-  watch(pageInfo, () => {
-    const { pageSize } = pageInfo;
-    if(( unref(dataSourceRef) && pageSize < unref(dataSourceRef).length)) return;
+  watch(() => pageInfo.pageSize, (newPageSize, oldPageSize) => {
+    // 假分页或者pageSize没变 那么就不执行
+    if(
+      newPageSize === oldPageSize ||
+      ( unref(dataSourceRef) && newPageSize < unref(dataSourceRef).length)
+    ) return;
     fetchDebounce.run();
   });
+
+  watch(() => pageInfo.current, (newCurrent, oldCurrent)  => {
+    if(
+      newCurrent === oldCurrent ||
+      ( unref(dataSourceRef) && pageInfo.pageSize < unref(dataSourceRef).length)
+    ) return;
+    fetchDebounce.run();
+  })
 
   watch(effects, () => {
     fetchDebounce.run();

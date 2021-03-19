@@ -19,7 +19,8 @@ module.exports = {
         modifyVars: {
           'prefixCls': 'one-pro',
           'primary-color':'#1890ff',
-          'one-border-color': '#e4eaed'//'#f0f0f0'//'#dce3e8'
+          'one-border-color': '#e4eaed',//'#f0f0f0'//'#dce3e8',
+          'font-size-base': '12px'
         }
       }
     }
