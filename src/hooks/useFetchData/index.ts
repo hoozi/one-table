@@ -20,6 +20,7 @@ function useFetchData(
     effects,
     pageInfo
   } = options;
+  
   const manualRef = ref<boolean>(manual);
   const dataSourceRef = ref<any[]>(defaultData || dataSource);
   const requesting = ref<boolean>(false);
@@ -73,7 +74,7 @@ function useFetchData(
       }
       //console.log(data)
       emit?.('dataLoad', data?.records, rest);
-      const responseData = postData?.(data?.records) || data?.records;
+      const responseData = postData?.(data) || data?.records;
       setData(responseData, data?.total || 0);
       useFullFixed(root);
       return responseData;
@@ -93,6 +94,7 @@ function useFetchData(
 
   watch(() => pageInfo.pageSize, (newPageSize, oldPageSize) => {
     // 假分页或者pageSize没变 那么就不执行
+    
     if(
       newPageSize === oldPageSize ||
       ( unref(dataSourceRef) && newPageSize < unref(dataSourceRef).length)

@@ -1,5 +1,6 @@
 import type { VNodeChild, Ref, CSSProperties, UnwrapRef } from 'vue';
 import type { ColumnProps, TableProps, SortOrder } from 'ant-design-vue/es/table/interface';
+//import type {  } from 'ant-design-vue/es/input'
 
 export type RenderVNode = VNodeChild | Element | JSX.Element;
 
@@ -61,10 +62,18 @@ export type RequestData<T> = {
   code?: number;
 } & Record<string, any>;
 
-export type OneTableColumnProps = ColumnProps & {
-  vueType?:string;
-  fastFilter?:boolean;
+export type OneTableColumnProps = Omit<ColumnProps, 'filters' | 'onFilter'> & {
+  valueType?:string;
+  valueEnum?: Record<string, { text:string; [key: string]: string | number }> | ((...args: any[]) => Promise<any>);
   renderFormItem?():RenderVNode;
+  props?: any;
+  show?:boolean;
+  hideInTable?:boolean;
+  hideInSearch?:boolean;
+  hideInSettings?:boolean;
+  children?:OneTableColumnProps[];
+  onFilter?:boolean | ((value: string, record: any) => boolean);
+  filters?:boolean | ColumnProps['filters'];
 }
 
 type SearchConfig = {}
@@ -72,10 +81,6 @@ type SearchConfig = {}
 export type VNodeText = string | number;
 
 export type ParamsType = Record<string, any>;
-
-export type TableColumnProps = ColumnProps & {
-  show?:boolean;
-}
 
 export type ActionType = {
   reload?: (resetPageIndex?: boolean) => void;
@@ -86,7 +91,7 @@ export type ActionType = {
 }
 
 export type OneTableProps = Omit<TableProps, 'columns'> & {
-  columns?:TableColumnProps[];
+  columns?:OneTableColumnProps[];
   params?:ParamsType;
   onDataLoad?: (dataSource: any[]) => void;
   onLoadingChange?: (loading: boolean | SpinProps | undefined) => void;
@@ -110,6 +115,7 @@ export type OneTableProps = Omit<TableProps, 'columns'> & {
   tableStyle?: CSSProperties;
   tableClass?: string;
   full?:boolean;
+  columnEmptyText?:string;
 }
 
 export type WithFalse<T> = T | false;

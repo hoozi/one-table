@@ -1,6 +1,6 @@
 import './index.less';
-import { defineComponent, PropType, ref, reactive, unref, computed, onMounted, onUpdated, nextTick } from 'vue';
-import { Table } from 'ant-design-vue';
+import { defineComponent, PropType, ref, reactive, unref, computed, onMounted, render, h } from 'vue';
+import { Table,Menu } from 'ant-design-vue';
 import { defaultTableProps } from 'ant-design-vue/lib/table/Table';
 import PropTypes from 'ant-design-vue/es/_util/vue-types';
 import { SortOrder, TableProps, ColumnProps } from 'ant-design-vue/lib/table/interface';
@@ -8,7 +8,7 @@ import { OneTableProps, ParamsType, RequestData, VNodeText, PageInfo, ActionType
 import useFetchData from './hooks/useFetchData';
 import usePagination from './hooks/usePagation';
 import useDefaultState from './hooks/useDefaultState'
-import { mergePaginationProps } from './utils';
+import { mergePaginationProps, createRowEvent, genColumns, omitUndefined } from './utils';
 import useBindAction from './hooks/useBindAction';
 import usePrefix from './hooks/usePrefix';
 
@@ -23,6 +23,7 @@ const OneTable = defineComponent<OneTableProps>({
       debounceTime, 
       defaultData, 
       params:propsParams = {},
+      columnEmptyText = '-',
       manualRequest = false,
       dataSource,
       search,
@@ -48,6 +49,7 @@ const OneTable = defineComponent<OneTableProps>({
     const { pageInfo, defaultPageInfo, setPageInfo } = usePagination(fetchPagination);
     const rootRef = ref<HTMLDivElement>();
     const params = reactive<ParamsType>(propsParams);
+    const selectedRow = ref<number>(-1);
     const [sortRef, setSort] = useDefaultState<Record<string, SortOrder> | undefined>({});
     const [filterRef, setFilter] = useDefaultState<Record<string, VNodeText[]> | undefined>({});
     const [selectedRowKeys, setSelectedRowKeys] = useDefaultState<Key[]>(props.rowSelection?.selectedRowKeys || []);
@@ -169,6 +171,19 @@ const OneTable = defineComponent<OneTableProps>({
       }
     );
     
+    // columns 
+    const getColumns = computed(() => genColumns({
+      columns: props.columns!,
+      columnEmptyText,
+      tableProps: props
+    }));
+
+    const isLocaleFilter = computed(() => props?.columns?.every(
+      (column) =>
+        (column.filters === true && column.onFilter === true) ||
+        (column.filters === undefined && column.onFilter === undefined),
+    ));
+
     // 分页相关
     const pagination = computed(() => mergePaginationProps(
       props.pagination,
@@ -193,9 +208,27 @@ const OneTable = defineComponent<OneTableProps>({
         }
       }),
     ));
-    const getTableProps = () => ({
+    
+    // customRow
+    const customRow = (row:any) => {
+      const rowEvent = createRowEvent(emit);
+      return {
+        onClick: (e:MouseEvent) => {
+          selectedRow.value = action.dataSource.value.indexOf(row);
+          rowEvent('rowClick', e, row)
+        },
+        onDblclick: (e:MouseEvent) => rowEvent('rowDbClick', e, row),
+        onContextmenu: (e:MouseEvent) => {
+          rowEvent('rowContextMenu', e, row)
+        },
+        onMouseenter: (e:MouseEvent) => rowEvent('rowEnter', e, row),
+        onMouseleave: (e:MouseEvent) => rowEvent('rowLeave', e, row)
+      }
+    }
+
+    const getTableProps = computed(() => ({
       ...rest,
-      columns,
+      columns: getColumns.value,
       loading: action.loading.value,
       dataSource: action.dataSource.value,
       pagination: props.pagination === false ? false : pagination.value,
@@ -205,19 +238,36 @@ const OneTable = defineComponent<OneTableProps>({
       style: tableStyle,
       scroll: {
         y: !!props.full,
-        x: props.scroll ? props.scroll.x : 100
-      }
-    });
+        x: props.scroll ? props.scroll.x : '100%'
+      },
+      onChange: (
+        pagination: OneTableProps['pagination'],
+        filters: Record<string, VNodeText[]>,
+        sorter: SortOrder,
+        { currentDataSource }: any
+      ) => {
+        if(rest.onChange) {
+          rest.onChange(pagination, filters, sorter, { currentDataSource });
+        }
+        if(!isLocaleFilter.value) {
+          setFilter(omitUndefined(filters));
+        }
+
+
+      },
+      rowClassName: (row:any, index:number) => selectedRow.value === index ? `${tableBaseCls}-tbody-row-selected` : rest.rowClassName?.(row, index) || '',
+      customRow: (row:any) => ({
+        ...rest.customRow?.(row),
+        ...customRow(row)
+      })
+    }));
     onMounted(() => {
       getAction?.(bindedAction);
     });
-    /* onUpdated(() => {
-      getAction?.(bindedAction);
-    }); */
     return () => {
       return (
-        <div class={tableWrapperCls.value} ref={rootRef}>
-          <Table {...getTableProps()} v-slots={slots || {}}/>
+        <div class={tableWrapperCls.value} onKeydown={(e) => console.log(e)} ref={rootRef} tabindex={-1}>
+          <Table {...getTableProps.value} v-slots={slots || {}}/>
         </div>
       )
     }
@@ -229,7 +279,12 @@ OneTable.emits = [
   'dataSourceChange',
   'dataLoad',
   'loadingChange',
-  'requestError'
+  'requestError',
+  'rowClick',
+  'rowContextMenu',
+  'rowDbClick',
+  'rowEnter',
+  'rowLeave'
 ]
 OneTable.props = {
   ...defaultTableProps,
@@ -247,7 +302,8 @@ OneTable.props = {
   search: PropTypes.oneOfType([Boolean, Object]).def(false),
   tableClass: PropTypes.string.def(''),
   tableStyle: PropTypes.style.def({}),
-  full: PropTypes.bool.def(false)
+  full: PropTypes.bool.def(false),
+  columnEmptyText: PropTypes.string.def('-')
 };
 
 export default OneTable;

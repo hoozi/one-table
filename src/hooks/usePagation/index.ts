@@ -35,6 +35,7 @@ function usePagination(
   function setPageInfo(pageInfo: Partial<PageInfo>) {
     Object.assign(pageInfoReactive, pageInfo);
   }
+
   return {
     pageInfo:pageInfoReactive,
     defaultPageInfo: omit(defaultPageInfo, ['current', 'pageSize']),

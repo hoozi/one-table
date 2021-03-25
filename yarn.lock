@@ -928,6 +928,17 @@
   dependencies:
     "@hapi/hoek" "^8.3.0"
 
+"@hoozi/panel@^1.0.1-beta.4":
+  version "1.0.1-beta.4"
+  resolved "https://registry.yarnpkg.com/@hoozi/panel/-/panel-1.0.1-beta.4.tgz#f54917dcd79b35c4b7af26c8ebd577416a62998b"
+  integrity sha512-rutB7od3y96zoGpRMwTgJHvCfA+XKrvh4SqPEgjFw6/zGpFNyRzdzmgUTe6kN0sNaewnnPNtjgu1yKgDPRcE7A==
+  dependencies:
+    "@ant-design/icons-vue" "^6.0.1"
+    ant-design-vue "^2.0.1"
+    core-js "^3.6.5"
+    lodash "^4.17.21"
+    vue "^3.0.5"
+
 "@intervolga/optimize-cssnano-plugin@^1.0.5":
   version "1.0.6"
   resolved "https://registry.npm.taobao.org/@intervolga/optimize-cssnano-plugin/download/@intervolga/optimize-cssnano-plugin-1.0.6.tgz#be7c7846128b88f6a9b1d1261a0ad06eb5c0fdf8"
@@ -5517,7 +5528,7 @@ lodash.uniq@^4.5.0:
   resolved "https://registry.npm.taobao.org/lodash.uniq/download/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
   integrity sha1-0CJTc662Uq3BvILklFM5qEJ1R3M=
 
-lodash@^4.17.11, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20, lodash@^4.17.3:
+lodash@^4.17.11, lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20, lodash@^4.17.21, lodash@^4.17.3:
   version "4.17.21"
   resolved "https://registry.npm.taobao.org/lodash/download/lodash-4.17.21.tgz?cache=0&sync_timestamp=1613835817439&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Flodash%2Fdownload%2Flodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha1-Z5WRxWTDv/quhFTPCz3zcMPWkRw=
