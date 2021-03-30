@@ -74,6 +74,7 @@ export type OneTableColumnProps = Omit<ColumnProps, 'filters' | 'onFilter'> & {
   children?:OneTableColumnProps[];
   onFilter?:boolean | ((value: string, record: any) => boolean);
   filters?:boolean | ColumnProps['filters'];
+  resizable?: boolean;
 }
 
 type SearchConfig = {}
@@ -88,6 +89,14 @@ export type ActionType = {
   reset?: () => void;
   clearSelected?: () => void;
   pageInfo?: PageInfo;
+}
+
+export type TableContextMenu = {
+  action():void;
+  text: string | VNodeChild;
+  icon: string | VNodeChild;
+  extra: string | VNodeChild;
+  children: TableContextMenu[]
 }
 
 export type OneTableProps = Omit<TableProps, 'columns'> & {
@@ -116,6 +125,10 @@ export type OneTableProps = Omit<TableProps, 'columns'> & {
   tableClass?: string;
   full?:boolean;
   columnEmptyText?:string;
+  hotKeys?:boolean | Record<string, any>;
+  contextMenuActions?:boolean | Partial<TableContextMenu>[];
+  highlightCurrentRow?:boolean;
+  containerStyle?:CSSProperties;
 }
 
 export type WithFalse<T> = T | false;

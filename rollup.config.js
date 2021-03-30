@@ -8,7 +8,7 @@ const dir = path.join(__dirname,'./lib');
 const name = 'layout';
 const banner =
   '/*!\n' +
-  ` * layout by ant-design-vue v${pkg.version}\n`+
+  ` * table by ant-design-vue v${pkg.version}\n`+
   ' */'
 
 const external = [
@@ -19,7 +19,7 @@ const external = [
 const buildType = [
   'es',
   'cjs'
-]
+];
 
 try {
   ['./lib', './es'].forEach(item => {

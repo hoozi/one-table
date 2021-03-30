@@ -928,10 +928,10 @@
   dependencies:
     "@hapi/hoek" "^8.3.0"
 
-"@hoozi/panel@^1.0.1-beta.4":
-  version "1.0.1-beta.4"
-  resolved "https://registry.yarnpkg.com/@hoozi/panel/-/panel-1.0.1-beta.4.tgz#f54917dcd79b35c4b7af26c8ebd577416a62998b"
-  integrity sha512-rutB7od3y96zoGpRMwTgJHvCfA+XKrvh4SqPEgjFw6/zGpFNyRzdzmgUTe6kN0sNaewnnPNtjgu1yKgDPRcE7A==
+"@hoozi/panel@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@hoozi/panel/-/panel-1.0.2.tgz#75979b81ebee377b3a000497e2bdffd7dc530705"
+  integrity sha512-Adi3ASja7JK243Xcg+U7OBq2eTkFmXy0gu1NmNX+GXuPgLbzCqNM9a4JRZr39xOLRulOQNR4wixE4GAxDdSp8w==
   dependencies:
     "@ant-design/icons-vue" "^6.0.1"
     ant-design-vue "^2.0.1"

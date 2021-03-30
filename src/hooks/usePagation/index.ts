@@ -1,5 +1,5 @@
 import { reactive, UnwrapRef } from 'vue';
-import omit from 'lodash/omit';
+import { omit } from '../../utils';
 import type { PageInfo } from '../../typings';
 
 type DefaultPageInfo = {
@@ -24,6 +24,8 @@ function mergePagination(pageInfo: DefaultPageInfo = {}):PageInfo {
   }
 }
 
+
+
 function usePagination(
   defaultPageInfo: DefaultPageInfo
 ):{
@@ -35,7 +37,6 @@ function usePagination(
   function setPageInfo(pageInfo: Partial<PageInfo>) {
     Object.assign(pageInfoReactive, pageInfo);
   }
-
   return {
     pageInfo:pageInfoReactive,
     defaultPageInfo: omit(defaultPageInfo, ['current', 'pageSize']),

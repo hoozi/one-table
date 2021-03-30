@@ -1,16 +1,21 @@
 import './index.less';
-import { defineComponent, PropType, ref, reactive, unref, computed, onMounted, render, h } from 'vue';
-import { Table,Menu } from 'ant-design-vue';
+import { defineComponent, PropType, ref, unref, computed, onMounted, provide } from 'vue';
+import { Table } from 'ant-design-vue';
 import { defaultTableProps } from 'ant-design-vue/lib/table/Table';
 import PropTypes from 'ant-design-vue/es/_util/vue-types';
 import { SortOrder, TableProps, ColumnProps } from 'ant-design-vue/lib/table/interface';
-import { OneTableProps, ParamsType, RequestData, VNodeText, PageInfo, ActionType } from './typings';
+import { OneTableProps, ParamsType, RequestData, VNodeText, PageInfo, ActionType, OneTableColumnProps } from './typings';
 import useFetchData from './hooks/useFetchData';
 import usePagination from './hooks/usePagation';
-import useDefaultState from './hooks/useDefaultState'
-import { mergePaginationProps, createRowEvent, genColumns, omitUndefined } from './utils';
+import useDefaultState from './hooks/useDefaultState';
+import useResizeProxy from './hooks/useResizeProxy';
+import { mergePaginationProps, createRowEvent, omitUndefined, mergeHotKeys } from './utils';
+import { genColumns } from './utils/column';
 import useBindAction from './hooks/useBindAction';
 import usePrefix from './hooks/usePrefix';
+import DraggableTh from './DraggableTh';
+import { tableKey } from './token';
+import { genKeyFormater } from './hooks/useKeyPress';
 
 type Key = ColumnProps['key']
 
@@ -26,33 +31,42 @@ const OneTable = defineComponent<OneTableProps>({
       columnEmptyText = '-',
       manualRequest = false,
       dataSource,
+      contextMenuActions,
       search,
+      hotKeys:propsHotKeys,
       columns,
       rowKey,
       tableClass,
       tableStyle,
+      containerStyle,
       getAction,
+      highlightCurrentRow,
       ...rest
     } = props;
 
+    // @ts-ignore
+    const initColumns = ref<OneTableColumnProps[]>(columns);
+
     const tableBaseCls = usePrefix('table-container');
+    const tableRef = ref(null);
 
-    const tableWrapperCls = computed(() => ({
-      [`${tableBaseCls}`]: true,
-      [`${tableBaseCls}-small`]: props.size === 'small',
-      [`${tableBaseCls}-pagination`]: !!props.pagination,
-      [`${tableBaseCls}-full`]: !!props.full,
-      [`${tableBaseCls}-bordered`]: !!props.bordered
-    }))
+    useResizeProxy();
 
+    // @ts-ignore
+    provide(tableKey, {
+      columns: unref(initColumns),
+      tableProps: props
+    });
+    
     const fetchPagination = typeof props.pagination === 'object' ? props.pagination : { pageSize: 20, current: 1, total: 0, defaultPageSize: 20, defaultCurrent:1 }
     const { pageInfo, defaultPageInfo, setPageInfo } = usePagination(fetchPagination);
     const rootRef = ref<HTMLDivElement>();
-    const params = reactive<ParamsType>(propsParams);
+    //const params = reactive<ParamsType>(propsParams);
     const selectedRow = ref<number>(-1);
     const [sortRef, setSort] = useDefaultState<Record<string, SortOrder> | undefined>({});
     const [filterRef, setFilter] = useDefaultState<Record<string, VNodeText[]> | undefined>({});
     const [selectedRowKeys, setSelectedRowKeys] = useDefaultState<Key[]>(props.rowSelection?.selectedRowKeys || []);
+
     const [selectedRows, setSelectedRows] = useDefaultState<typeof dataSource>([]);
     const [formSearch, setFormSearch]= useDefaultState<Record<string, any> | undefined>(() => {
       if(manualRequest || search !== false ) {
@@ -80,7 +94,7 @@ const OneTable = defineComponent<OneTableProps>({
         return rowKey;
       }
       return (row: typeof dataSource, index:number) => (row as any)?.[rowKey as string] ?? index
-    })
+    });
 
     // 选择项相关
     const rowSelection: TableProps['rowSelection'] = computed(() => (
@@ -110,7 +124,7 @@ const OneTable = defineComponent<OneTableProps>({
       async (pageInfo) => {
         const requestParams = Object.assign(
           (pageInfo || {}),
-          params,
+          propsParams,
           unref(formSearch)
         )
         const response = await request(requestParams, unref(sortRef), unref(filterRef) ) as RequestData<any>;
@@ -127,11 +141,20 @@ const OneTable = defineComponent<OneTableProps>({
         postData,
         manual: manual.value,
         //polling,
-        effects: [params, formSearch, sortRef, filterRef],
+        effects: [propsParams, formSearch, sortRef, filterRef],
         debounceTime,
       },
       rootRef
     );
+
+    const tableWrapperCls = computed(() => ({
+      [`${tableBaseCls}`]: true,
+      [`${tableBaseCls}-small`]: props.size === 'small',
+      [`${tableBaseCls}-pagination`]: !!props.pagination,
+      [`${tableBaseCls}-full`]: !!props.full,
+      [`${tableBaseCls}-bordered`]: !!props.bordered,
+      [`${tableBaseCls}-nodata`]: !unref(action.dataSource).length
+    }));
 
     const bindedAction = useBindAction(
       Object.assign(action,{ pageInfo, setPageInfo }),
@@ -173,7 +196,7 @@ const OneTable = defineComponent<OneTableProps>({
     
     // columns 
     const getColumns = computed(() => genColumns({
-      columns: props.columns!,
+      columns: unref(initColumns),
       columnEmptyText,
       tableProps: props
     }));
@@ -215,7 +238,7 @@ const OneTable = defineComponent<OneTableProps>({
       return {
         onClick: (e:MouseEvent) => {
           selectedRow.value = action.dataSource.value.indexOf(row);
-          rowEvent('rowClick', e, row)
+          rowEvent('rowClick', e, row);
         },
         onDblclick: (e:MouseEvent) => rowEvent('rowDbClick', e, row),
         onContextmenu: (e:MouseEvent) => {
@@ -238,7 +261,7 @@ const OneTable = defineComponent<OneTableProps>({
       style: tableStyle,
       scroll: {
         y: !!props.full,
-        x: props.scroll ? props.scroll.x : '100%'
+        x: !!props.scroll ? (props.scroll as any)?.x : '100%'
       },
       onChange: (
         pagination: OneTableProps['pagination'],
@@ -252,22 +275,41 @@ const OneTable = defineComponent<OneTableProps>({
         if(!isLocaleFilter.value) {
           setFilter(omitUndefined(filters));
         }
-
-
       },
-      rowClassName: (row:any, index:number) => selectedRow.value === index ? `${tableBaseCls}-tbody-row-selected` : rest.rowClassName?.(row, index) || '',
+      rowClassName: (row:any, index:number) => (selectedRow.value === index && !!highlightCurrentRow) ? `${tableBaseCls}-tbody-row-selected` : rest.rowClassName?.(row, index) || '',
       customRow: (row:any) => ({
         ...rest.customRow?.(row),
         ...customRow(row)
-      })
-    }));
+      }),
+      components: {
+        header: {
+          cell: DraggableTh
+        }
+      }
+    } as OneTableProps));
     onMounted(() => {
       getAction?.(bindedAction);
     });
+
+    const hotKeys = mergeHotKeys({
+      hotKeys: propsHotKeys,
+      action
+    });
+
+    const handleRootKeyPress = (event: KeyboardEvent) => {
+      if(!hotKeys) return;
+      Object.keys(hotKeys).forEach((key:string)=> {
+        const isEvenType = genKeyFormater(key);
+        if(isEvenType(event)) {
+          // @ts-ignore
+          return hotKeys[key].call(null, event);
+        }
+      })
+    }
     return () => {
       return (
-        <div class={tableWrapperCls.value} onKeydown={(e) => console.log(e)} ref={rootRef} tabindex={-1}>
-          <Table {...getTableProps.value} v-slots={slots || {}}/>
+        <div class={tableWrapperCls.value} onKeydown={handleRootKeyPress} ref={rootRef} tabindex={-1} style={containerStyle}>
+          <Table {...getTableProps.value} v-slots={slots || {}} ref={tableRef}/>
         </div>
       )
     }
@@ -303,7 +345,11 @@ OneTable.props = {
   tableClass: PropTypes.string.def(''),
   tableStyle: PropTypes.style.def({}),
   full: PropTypes.bool.def(false),
-  columnEmptyText: PropTypes.string.def('-')
+  columnEmptyText: PropTypes.string.def('-'),
+  hotKeys: PropTypes.oneOfType([Object, Boolean]).def(false),
+  contextMenuActions: PropTypes.oneOfType([Array, Boolean]).def(false),
+  highlightCurrentRow: PropTypes.bool.def(false),
+  containerStyle: PropTypes.style.def({})
 };
 
 export default OneTable;

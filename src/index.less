@@ -1,29 +1,44 @@
-@import '~ant-design-vue/dist/antd.less';
+@import (reference) '~ant-design-vue/dist/antd.less';
 @tableCls: ~'@{prefixCls}-table-container';
 @antTableCls: ant-table;
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-thumb {
-  background-color: rgba(144, 147, 153, 0.3);
-  border-radius: 2px;
-  //box-shadow: inset 0 0 5px rgb(0 0 0 / 20%);
-}
-::-webkit-scrollbar-track {
-  background-color: #f6f8f8;
-}
 .primary-bold-color {
   color: @primary-color;
   font-weight: 500;
 }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 .@{tableCls} {
-
   .@{antTableCls}-wrapper {
     background-color: #f6f8f8;
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(144, 147, 153, 0.3);
+      border-radius: 2px;
+      //box-shadow: inset 0 0 5px rgb(0 0 0 / 20%);
+    }
+    ::-webkit-scrollbar-track {
+      background-color: #f6f8f8;
+    }
     .@{antTableCls} {
       //table-layout: fixed;
       user-select: none;
+      position: relative;
+      &-content {
+        position: relative;
+      }
+      &-body {
+        
+      }
+      .resize-proxy {
+        position: absolute;
+        left: 200px;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 1px solid @border-color-split;
+        z-index: 10;
+      }
       &-header {
         //margin-bottom: -8px !important;
         &::-webkit-scrollbar-track {
@@ -42,12 +57,14 @@
         }
       }
       &-tbody > tr {
+        transition: none;
         &.ant-table-row-selected td:not(.ant-table-selection-column) {
           background-color:#fffbe6;
         }
       }
       &-thead > tr > th {
         background-color: #f6f8f8;
+        user-select: none;
       }
       .ant-checkbox {
         &-inner {
@@ -141,6 +158,13 @@
       }
     }
   }
+  &-nodata {
+    .@{antTableCls} {
+      &-header {
+        margin-bottom: 0 !important;
+      }
+    }
+  }
   &-pagination {
     
   }
@@ -163,7 +187,6 @@
         //flex-basis: content;
         &-content {
           height: 100%;
-          position: relative;
         }
         &-scroll {
           display: flex;

@@ -72,7 +72,6 @@ function useFetchData(
       if(code !== 0) {
         return [];
       }
-      //console.log(data)
       emit?.('dataLoad', data?.records, rest);
       const responseData = postData?.(data) || data?.records;
       setData(responseData, data?.total || 0);
@@ -94,7 +93,6 @@ function useFetchData(
 
   watch(() => pageInfo.pageSize, (newPageSize, oldPageSize) => {
     // 假分页或者pageSize没变 那么就不执行
-    
     if(
       newPageSize === oldPageSize ||
       ( unref(dataSourceRef) && newPageSize < unref(dataSourceRef).length)
@@ -110,9 +108,7 @@ function useFetchData(
     fetchDebounce.run();
   })
 
-  watch(effects, () => {
-    fetchDebounce.run();
-  });
+  watch(effects, fetchDebounce.run)
 
   onMounted(() => {
     fetchDebounce.run();

@@ -4,7 +4,7 @@ import typescript from "rollup-plugin-typescript2";
 import babel from "@rollup/plugin-babel";
 import postcss from "rollup-plugin-postcss";
 import commonjs from "@rollup/plugin-commonjs";
-//import resolve from "@rollup/plugin-node-resolve";
+import resolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
 import url from "@rollup/plugin-url";
 import image from '@rollup/plugin-image';
@@ -39,7 +39,7 @@ export default [
     tsconfig: 'rollup.tsconfig.json'
   }),
   babel({
-    babelHelpers: "bundled",
+    babelHelpers: "runtime",
     extensions: [".js", ".jsx", ".ts", ".tsx", "json"],
     exclude: ["node_modules/**", "public/**"],
   }),
